@@ -111,6 +111,15 @@ jobs:
             puts "::error::Unexpected answer from Apple (#{res.code}): #{res.body[0,300]}"; exit 1
           end
           exit 1 unless problems.empty?
+          areq=Net::HTTP::Get.new(URI("https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=#{bid}&limit=5"))
+          areq['Authorization']="Bearer #{jwt}"
+          ares=Net::HTTP.start(uri.host,uri.port,use_ssl:true){|h| h.request(areq)}
+          apps=ares.code=='200' ? JSON.parse(ares.body)['data'] : []
+          if apps.empty?
+            puts "::error::There is no app in App Store Connect with bundle ID #{bid} yet. Create it once: App Store Connect > Apps > + > New App (platform iOS, name Say Piano, bundle ID #{bid}, any SKU), then run this again."
+            exit 1
+          end
+          puts "Found the App Store Connect app: #{apps[0]['attributes']['name']}"
           EOF
           KEYFILE=~/private_keys/AuthKey_$KEY_ID.p8 ruby /tmp/check.rb
 
