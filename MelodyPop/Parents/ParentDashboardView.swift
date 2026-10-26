@@ -280,7 +280,7 @@ struct ParentDashboardView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: "sparkles").foregroundStyle(Theme.peachDeep)
-                Text("MelodyPop Plus").font(Theme.font(.headline, weight: .heavy))
+                Text("Say Piano Plus").font(Theme.font(.headline, weight: .heavy))
                 Spacer()
                 if store.hasPlus {
                     Label("Unlocked", systemImage: "checkmark.seal.fill").foregroundStyle(Theme.mintDeep).font(Theme.font(.caption, weight: .bold))

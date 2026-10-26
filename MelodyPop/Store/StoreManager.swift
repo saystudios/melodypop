@@ -3,7 +3,7 @@ import MelodyPopKit
 import Observation
 import StoreKit
 
-/// StoreKit 2: one non-consumable, "MelodyPop Plus", that unlocks lessons 11–30 and the premium songs.
+/// StoreKit 2: one non-consumable, "Say Piano Plus", that unlocks lessons 11–30 and the premium songs.
 /// Purchases are only offered behind the parental gate in the Parent Dashboard.
 @Observable
 @MainActor
@@ -40,7 +40,7 @@ final class StoreManager {
         do {
             let products = try await Product.products(for: [Entitlements.plusProductID])
             product = products.first
-            state = product == nil ? .unavailable("MelodyPop Plus isn't available in this region or build yet.") : .ready
+            state = product == nil ? .unavailable("Say Piano Plus isn't available in this region or build yet.") : .ready
         } catch {
             state = .unavailable(error.localizedDescription)
         }

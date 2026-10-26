@@ -92,7 +92,7 @@ struct PlayModeSelectionView: View {
     private func description(_ s: InputSource) -> String {
         switch s {
         case .microphone:
-            return "Put your iPhone or iPad near your acoustic piano. MelodyPop listens and checks each note. Best for one note at a time — chord lessons need a keyboard or the screen."
+            return "Put your iPhone or iPad near your acoustic piano. Say Piano listens and checks each note. Best for one note at a time — chord lessons need a keyboard or the screen."
         case .midi:
             return "Connect a digital piano or MIDI keyboard with a USB cable (USB-C or Lightning adapter) or Bluetooth. Every note, chord and the sustain pedal are tracked exactly."
         case .touch:

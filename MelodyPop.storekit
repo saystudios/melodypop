@@ -11,12 +11,12 @@
       "localizations" : [
         {
           "description" : "Unlock all 30 lessons and every song.",
-          "displayName" : "MelodyPop Plus",
+          "displayName" : "Say Piano Plus",
           "locale" : "en_US"
         }
       ],
       "productID" : "com.saystudios.melodypop.plus",
-      "referenceName" : "MelodyPop Plus",
+      "referenceName" : "Say Piano Plus",
       "type" : "NonConsumable"
     }
   ],

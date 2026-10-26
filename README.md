@@ -1,6 +1,6 @@
-# MelodyPop
+# Say Piano
 
-A piano-learning app for iPhone and iPad by Say Studios LLC. Students learn with any of three play modes, all driven by the same lesson engine, scoring and progress tracking:
+Say Piano (code name MelodyPop) is a piano-learning app for iPhone and iPad by Say Studios LLC. Students learn with any of three play modes, all driven by the same lesson engine, scoring and progress tracking:
 
 | Mode | In the app | How it works |
 |---|---|---|
@@ -33,23 +33,22 @@ Students can switch modes inside any lesson; the lesson pauses, switches input, 
 - **Connect My Keyboard (Bluetooth)** – tap *Pair Bluetooth* in the mode banner, then select the keyboard in the list. Once paired it connects automatically.
 - **Play on Screen** – works everywhere, including the Simulator. Landscape gives the most keys; *Key size* is in the volume popover.
 
-### In-app purchase (MelodyPop Plus)
+### In-app purchase (Say Piano Plus)
 
-Lessons 1–10 and six songs are free; *MelodyPop Plus* (`com.saystudios.melodypop.plus`, non-consumable) unlocks lessons 11–30 and every song. Purchasing is only offered in the Parent Dashboard behind a parental gate.
+Lessons 1–10 and six songs are free; *Say Piano Plus* (`com.saystudios.melodypop.plus`, non-consumable) unlocks lessons 11–30 and every song. Purchasing is only offered in the Parent Dashboard behind a parental gate.
 
 - **Local testing:** the shared scheme points at `MelodyPop.storekit`. If purchases don't show when you Run from Xcode, open *Product → Scheme → Edit Scheme → Run → Options → StoreKit Configuration* and select `MelodyPop.storekit`.
 - **Release:** create the same product ID in App Store Connect before submitting.
 
 ## Build for TestFlight on GitHub (no Mac needed)
 
-The **Build iPhone app** workflow (`.github/workflows/ios-app.yml`) works the same way as Say Math's: GitHub's Mac runners build MelodyPop, create the signing certificate and App Store profile through the App Store Connect API, and upload the build to TestFlight.
+The **Build iPhone app** workflow (`.github/workflows/ios-app.yml`) builds Say Piano on GitHub's Mac runners and uploads it to TestFlight. It needs **only the App Store Connect API key** — no .p12 certificate or provisioning profile. The app is signed with Apple's cloud-managed distribution certificate, so nothing is created or revoked on your Apple account.
 
 One-time setup:
-1. In the melodypop repo on GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Add the same four values you use for Say Math: `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`. (Optional: `BUNDLE_ID` — defaults to `com.saystudios.melodypop`.)
-2. Run the workflow once (see *Each build* below). It registers the App ID automatically; on this first run the upload step fails because the app doesn't exist in App Store Connect yet — that's expected.
-3. In **App Store Connect → Apps → + → New App**: platform iOS, name MelodyPop (or any free name), bundle ID `com.saystudios.melodypop`, any SKU. Then run the workflow again.
+1. In the repo on GitHub: **Settings → Secrets and variables → Actions**. Make sure these four secrets exist: `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (the same values as Say Math). The API key needs **Admin** access. (Optional: `BUNDLE_ID` — defaults to `com.saystudios.melodypop`.) The old `APPLE_DISTRIBUTION_P12_*` and `APP_STORE_PROFILE_BASE64` secrets are no longer used.
+2. In **App Store Connect → Apps → + → New App**: platform iOS, name Say Piano, bundle ID `com.saystudios.melodypop`, any SKU. (The workflow registers the bundle ID for you if it's missing.)
 
-Each build: **Actions → Build iPhone app → Run workflow**, enter the version (e.g. `1.0`). After about 15–30 minutes the build appears in App Store Connect → TestFlight. Add yourself as an internal tester, install the **TestFlight** app on your iPhone/iPad, and install MelodyPop from there.
+Each build: **Actions → Build iPhone app → Run workflow**, enter the version (e.g. `1.0`). After about 15–30 minutes the build appears in App Store Connect → TestFlight. Add yourself as an internal tester, install the **TestFlight** app on your iPhone/iPad, and install Say Piano from there.
 
 ## Tests
 

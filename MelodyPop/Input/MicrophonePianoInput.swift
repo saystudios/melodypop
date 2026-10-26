@@ -11,7 +11,7 @@ final class MicrophonePianoInput: PianoInput {
         case permissionDenied, unavailable
         var errorDescription: String? {
             switch self {
-            case .permissionDenied: return "Microphone access is off. Turn it on in Settings › MelodyPop to use Listen to My Piano."
+            case .permissionDenied: return "Microphone access is off. Turn it on in Settings › Say Piano to use Listen to My Piano."
             case .unavailable: return "No microphone is available right now."
             }
         }
