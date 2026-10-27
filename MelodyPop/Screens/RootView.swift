@@ -64,7 +64,7 @@ struct OnboardingView: View {
             VStack(spacing: 22) {
                 PipMascot(size: 110, mood: .cheering)
                     .padding(.top, 40)
-                Text("Welcome to MelodyPop!")
+                Text("Welcome to Say Piano!")
                     .font(Theme.font(.largeTitle, weight: .heavy))
                     .multilineTextAlignment(.center)
                 Text("Who's learning piano today?")

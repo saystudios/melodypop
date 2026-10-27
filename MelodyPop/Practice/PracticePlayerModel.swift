@@ -60,6 +60,12 @@ final class PracticePlayerModel {
         if listenerID == nil {
             listenerID = play.addListener { [weak self] event in MainActor.assumeIsolated { self?.handle(event) } }
         }
+        ensureTicking()
+    }
+
+    /// The frame ticker drives count-ins, timed scoring and demos. It is (re)started whenever
+    /// something needs it, so a view disappearing and reappearing can never leave a run frozen.
+    private func ensureTicking() {
         if ticker == nil {
             ticker = FrameTicker { [weak self] in
                 MainActor.assumeIsolated { self?.tick() }
@@ -85,6 +91,7 @@ final class PracticePlayerModel {
             return
         }
         feedback = nil
+        ensureTicking()
         let t = HostClock.now
         if isTimed {
             let beats = item.piece.beatsPerBar
@@ -138,6 +145,7 @@ final class PracticePlayerModel {
             return
         }
         guard session.isRunning || session.isPaused else { start(); return }
+        ensureTicking()
         let t = HostClock.now
         playingSince = t
         if isTimed {
@@ -282,6 +290,7 @@ final class PracticePlayerModel {
         }
         demoCursor = events.sorted { $0.0 < $1.0 }.map { (time: $0.0, on: $0.1, midi: $0.2) }
         demoIndex = 0
+        ensureTicking()
         play?.setAppPlaying(true)
         phase = .demo
     }

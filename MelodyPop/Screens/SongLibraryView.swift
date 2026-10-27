@@ -52,12 +52,13 @@ struct SongLibraryView: View {
             .navigationDestination(for: Int.self) { id in
                 if let song = SongLibrary.song(id: id) {
                     PracticePlayerView(item: PracticeItem(song: song), source: play.mode)
+                        .id(id)
                 }
             }
-            .alert("MelodyPop Plus", isPresented: Binding(get: { lockedSong != nil }, set: { if !$0 { lockedSong = nil } })) {
+            .alert("Say Piano Plus", isPresented: Binding(get: { lockedSong != nil }, set: { if !$0 { lockedSong = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("\"\(lockedSong?.title ?? "")\" is part of MelodyPop Plus. Ask a grown-up to look in the Parent Dashboard.")
+                Text("\"\(lockedSong?.title ?? "")\" is part of Say Piano Plus. Ask a grown-up to look in the Parent Dashboard.")
             }
         }
     }

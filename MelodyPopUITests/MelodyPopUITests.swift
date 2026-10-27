@@ -130,7 +130,13 @@ final class MelodyPopUITests: XCTestCase {
         app.buttons["resume-button"].tap()
         // Nobody plays: every note is missed and scored as such.
         let accuracy = app.staticTexts["result-accuracy"]
-        XCTAssertTrue(accuracy.waitForExistence(timeout: 30))
+        if !accuracy.waitForExistence(timeout: 30) {
+            let progress = app.staticTexts["progress-label"]
+            let state = progress.exists ? progress.label : "no progress label"
+            let mainButton = ["start-button", "pause-button", "resume-button"].first { app.buttons[$0].exists } ?? "none"
+            XCTFail("Song never finished. Progress: \(state); main button: \(mainButton); paused reason: \(app.staticTexts["paused-reason"].exists ? app.staticTexts["paused-reason"].label : "none")")
+            return
+        }
         XCTAssertEqual(accuracy.label, "0%")
         app.buttons["result-retry"].tap()
         XCTAssertTrue(app.staticTexts["count-in"].waitForExistence(timeout: 3))

@@ -205,7 +205,7 @@ struct AboutView: View {
                 HStack {
                     PipMascot(size: 56)
                     VStack(alignment: .leading) {
-                        Text("MelodyPop").font(Theme.font(.title2, weight: .heavy))
+                        Text("Say Piano").font(Theme.font(.title2, weight: .heavy))
                         Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")")
                             .font(Theme.font(.caption)).foregroundStyle(Theme.inkSoft)
                     }
@@ -214,7 +214,7 @@ struct AboutView: View {
                 Text("Questions or feedback: SayStudiosllc@yahoo.com").font(Theme.font(.subheadline))
                 Divider()
                 Text("Piano sound").font(Theme.font(.headline, weight: .heavy))
-                Text("Salamander Grand Piano V3 by Alexander Holm, licensed under Creative Commons Attribution 3.0 (CC BY 3.0). Samples were trimmed, converted to mono and re-encoded for MelodyPop.")
+                Text("Salamander Grand Piano V3 by Alexander Holm, licensed under Creative Commons Attribution 3.0 (CC BY 3.0). Samples were trimmed, converted to mono and re-encoded for Say Piano.")
                     .font(Theme.font(.subheadline))
                 Text("Microphone privacy").font(Theme.font(.headline, weight: .heavy))
                 Text("In Listen to My Piano mode, sound from the microphone is analyzed on this device to find the notes you play. Nothing is recorded or sent anywhere.")

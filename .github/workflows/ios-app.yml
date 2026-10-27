@@ -1,4 +1,4 @@
-# MelodyPop: builds the iPhone/iPad app on GitHub's Mac computers and uploads it to
+# Say Piano: builds the iPhone/iPad app on GitHub's Mac computers and uploads it to
 # App Store Connect (TestFlight). No Mac needed. Same setup as Say Math.
 #
 # Run it from GitHub: Actions > "Build iPhone app" > Run workflow.
@@ -9,8 +9,9 @@
 #   ASC_KEY_ID      App Store Connect API key ID
 #   ASC_ISSUER_ID   App Store Connect API issuer ID
 #   ASC_KEY_P8      full text of the AuthKey_XXXX.p8 file (including BEGIN/END lines)
-# Also requires APPLE_DISTRIBUTION_P12_BASE64, APPLE_DISTRIBUTION_P12_PASSWORD,
-# and APP_STORE_PROFILE_BASE64. Never create or revoke certificates in this workflow.
+# That's all: no .p12 certificate or provisioning profile is needed. The app is signed with
+# Apple's cloud-managed distribution certificate through the API key (the key needs Admin
+# access). Nothing is created or revoked on your account, so builds never "rotate" certificates.
 # Optional:
 #   BUNDLE_ID       defaults to com.saystudios.melodypop
 # The App ID is registered automatically on the first run. You must create the app once in
@@ -36,14 +37,9 @@ jobs:
       KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       P8: ${{ secrets.ASC_KEY_P8 }}
-      SIGNING_P12_BASE64: ${{ secrets.APPLE_DISTRIBUTION_P12_BASE64 }}
-      SIGNING_P12_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_P12_PASSWORD }}
-      SIGNING_PROFILE_BASE64: ${{ secrets.APP_STORE_PROFILE_BASE64 }}
       VER: ${{ inputs.version }}
       BUILD: ${{ github.run_number }}
-      PROFILE_NAME: MelodyPop CI ${{ github.run_id }}
-      PROFILE_PREFIX: "MelodyPop CI "
-      APP_NAME: MelodyPop
+      APP_NAME: Say Piano
     steps:
       - uses: actions/checkout@v5
 
@@ -52,8 +48,7 @@ jobs:
           missing=""
           for v in TEAM KEY_ID ISSUER P8; do [ -z "${!v}" ] && missing="$missing $v"; done
           if [ -n "$missing" ]; then echo "::error::Missing secrets:$missing (add APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 in Settings > Secrets and variables > Actions)"; exit 1; fi
-          echo "Building MelodyPop $VER (build $BUILD) for $BUNDLE_ID"
-          echo "SIGN_DIR=$RUNNER_TEMP/sign" >> "$GITHUB_ENV"
+          echo "Building Say Piano $VER (build $BUILD) for $BUNDLE_ID"
 
       - name: Pick the newest Xcode
         run: |
@@ -99,7 +94,15 @@ jobs:
           when '200'
             ids=JSON.parse(res.body)['data'].map{|d| d['attributes']['identifier']}
             if ids.include?(bid) then puts "Apple login works, and the App ID #{bid} is registered."
-            else puts "Apple login works. The App ID #{bid} isn't registered yet; the next step registers it." end
+            else
+              puts "Apple login works. Registering the App ID #{bid}..."
+              body={data:{type:'bundleIds',attributes:{identifier:bid,name:ENV['APP_NAME'],platform:'IOS'}}}.to_json
+              preq=Net::HTTP::Post.new(URI('https://api.appstoreconnect.apple.com/v1/bundleIds'))
+              preq['Authorization']="Bearer #{jwt}"; preq['Content-Type']='application/json'; preq.body=body
+              pres=Net::HTTP.start(uri.host,uri.port,use_ssl:true){|h| h.request(preq)}
+              if pres.code=='201' then puts "Registered the App ID #{bid}."
+              else puts "::error::Could not register the App ID #{bid} (#{pres.code}): #{pres.body[0,300]}"; exit 1 end
+            end
           when '401'
             puts "::error::Apple rejected the login (401). ASC_KEY_ID and ASC_ISSUER_ID must come from the same Team Keys page as the AuthKey file. Check that ASC_KEY_ID matches the file name AuthKey_XXXXXXXXXX.p8, and copy the Issuer ID again."; exit 1
           when '403'
@@ -108,46 +111,28 @@ jobs:
             puts "::error::Unexpected answer from Apple (#{res.code}): #{res.body[0,300]}"; exit 1
           end
           exit 1 unless problems.empty?
+          areq=Net::HTTP::Get.new(URI("https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=#{bid}&limit=5"))
+          areq['Authorization']="Bearer #{jwt}"
+          ares=Net::HTTP.start(uri.host,uri.port,use_ssl:true){|h| h.request(areq)}
+          apps=ares.code=='200' ? JSON.parse(ares.body)['data'] : []
+          if apps.empty?
+            puts "::error::There is no app in App Store Connect with bundle ID #{bid} yet. Create it once: App Store Connect > Apps > + > New App (platform iOS, name Say Piano, bundle ID #{bid}, any SKU), then run this again."
+            exit 1
+          end
+          puts "Found the App Store Connect app: #{apps[0]['attributes']['name']}"
           EOF
           KEYFILE=~/private_keys/AuthKey_$KEY_ID.p8 ruby /tmp/check.rb
-
-      - name: Import reusable Apple signing assets
-        shell: bash
-        run: |
-          for key in SIGNING_P12_BASE64 SIGNING_P12_PASSWORD SIGNING_PROFILE_BASE64; do
-            if [ -z "${!key}" ]; then echo "::error::Missing $key GitHub secret. Set up reusable signing before running this workflow."; exit 1; fi
-          done
-          SIGN_PATH="$RUNNER_TEMP/reusable-signing"
-          mkdir -p "$SIGN_PATH"
-          printf '%s' "$SIGNING_P12_BASE64" | base64 --decode > "$SIGN_PATH/distribution.p12"
-          printf '%s' "$SIGNING_PROFILE_BASE64" | base64 --decode > "$SIGN_PATH/app.mobileprovision"
-          openssl pkcs12 -in "$SIGN_PATH/distribution.p12" -passin env:SIGNING_P12_PASSWORD -noout
-          security cms -D -i "$SIGN_PATH/app.mobileprovision" > "$SIGN_PATH/profile.plist"
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$SIGN_PATH/profile.plist")
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$SIGN_PATH/profile.plist")
-          PROFILE_APP_ID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$SIGN_PATH/profile.plist")
-          case "$PROFILE_APP_ID" in *."$BUNDLE_ID") ;; *) echo "::error::Provisioning profile does not match bundle ID $BUNDLE_ID"; exit 1;; esac
-          KC_PASSWORD="$(openssl rand -hex 24)"
-          KC_PATH="$SIGN_PATH/build.keychain-db"
-          security create-keychain -p "$KC_PASSWORD" "$KC_PATH"
-          security unlock-keychain -p "$KC_PASSWORD" "$KC_PATH"
-          security set-keychain-settings -lut 21600 "$KC_PATH"
-          security import "$SIGN_PATH/distribution.p12" -k "$KC_PATH" -P "$SIGNING_P12_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASSWORD" "$KC_PATH"
-          security list-keychains -d user -s "$KC_PATH"
-          security find-identity -v -p codesigning "$KC_PATH"
-          for d in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do mkdir -p "$d"; cp "$SIGN_PATH/app.mobileprovision" "$d/$PROFILE_UUID.mobileprovision"; done
-          echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
-          echo "KEYCHAIN_PATH=$KC_PATH" >> "$GITHUB_ENV"
 
       - name: Set up App Store signing in the project
         run: python3 .github/scripts/set-signing.py MelodyPop.xcodeproj/project.pbxproj
 
       - name: Build the app
         run: |
+          # Archived without signing; the export step below signs it for the App Store.
           xcodebuild -project MelodyPop.xcodeproj -scheme MelodyPop -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/MelodyPop.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
             archive > "$RUNNER_TEMP/build.log" 2>&1 || true
           tail -n 200 "$RUNNER_TEMP/build.log"
           grep -E "error:|\*\* ARCHIVE FAILED" "$RUNNER_TEMP/build.log" | sort -u | head -n 8 | while IFS= read -r l; do echo "::error::$l"; done
@@ -162,9 +147,7 @@ jobs:
             <key>method</key><string>app-store-connect</string>
             <key>destination</key><string>upload</string>
             <key>teamID</key><string>$TEAM</string>
-            <key>signingStyle</key><string>manual</string>
-            <key>signingCertificate</key><string>Apple Distribution</string>
-            <key>provisioningProfiles</key><dict><key>$BUNDLE_ID</key><string>$PROFILE_NAME</string></dict>
+            <key>signingStyle</key><string>automatic</string>
             <key>manageAppVersionAndBuildNumber</key><false/>
             <key>uploadSymbols</key><true/>
           </dict></plist>
@@ -173,16 +156,18 @@ jobs:
             -archivePath "$RUNNER_TEMP/MelodyPop.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_$KEY_ID.p8 \
             -authenticationKeyID "$KEY_ID" \
-            -authenticationKeyIssuerID "$ISSUER"
-          echo "Uploaded MelodyPop $VER (build $BUILD). It appears in App Store Connect > TestFlight in about 15-30 minutes."
-
-      - name: Remove signing files from this computer
-        if: always()
-        run: |
-          [ -n "${KEYCHAIN_PATH:-}" ] && security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
-          rm -rf "$RUNNER_TEMP/reusable-signing"
+            -authenticationKeyIssuerID "$ISSUER" 2>&1 | tee "$RUNNER_TEMP/export.log"
+          if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+            grep -E "error:|Error Domain|No Accounts|No profiles|cloud|Cloud|App Store Connect" "$RUNNER_TEMP/export.log" | sort -u | head -n 8 | while IFS= read -r l; do echo "::error::$l"; done
+            if grep -qiE "app record|No suitable application records|could not find.*app" "$RUNNER_TEMP/export.log"; then
+              echo "::error::Create the app once in App Store Connect (Apps > + > New App) with bundle ID $BUNDLE_ID, then run this again."
+            fi
+            exit 1
+          fi
+          echo "Uploaded Say Piano $VER (build $BUILD). It appears in App Store Connect > TestFlight in about 15-30 minutes."
 
       - name: Clean up key
         if: always()

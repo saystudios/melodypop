@@ -122,7 +122,7 @@ enum DataStore {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Could not create the MelodyPop data store: \(error)")
+            fatalError("Could not create the Say Piano data store: \(error)")
         }
     }
 }

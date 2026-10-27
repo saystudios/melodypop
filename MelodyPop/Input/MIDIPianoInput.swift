@@ -32,7 +32,7 @@ final class MIDIPianoInput: PianoInput {
     func start() throws {
         guard !isRunning else { return }
         if client == 0 {
-            let status = MIDIClientCreateWithBlock("MelodyPop" as CFString, &client) { [weak self] notification in
+            let status = MIDIClientCreateWithBlock("Say Piano" as CFString, &client) { [weak self] notification in
                 if notification.pointee.messageID == .msgSetupChanged {
                     DispatchQueue.main.async { self?.connectAllSources() }
                 }
@@ -40,7 +40,7 @@ final class MIDIPianoInput: PianoInput {
             guard status == noErr else { throw MIDIError.clientFailed(status) }
         }
         if port == 0 {
-            let status = MIDIInputPortCreateWithProtocol(client, "MelodyPop Input" as CFString, ._1_0, &port) { [weak self] eventList, _ in
+            let status = MIDIInputPortCreateWithProtocol(client, "Say Piano Input" as CFString, ._1_0, &port) { [weak self] eventList, _ in
                 self?.receive(eventList)
             }
             guard status == noErr else { throw MIDIError.portFailed(status) }

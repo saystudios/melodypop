@@ -105,7 +105,7 @@ struct JourneyView: View {
             if unlocked {
                 path.append(lesson.id)
             } else if premiumLocked && isUnlocked(lesson.id) {
-                lockedMessage = "\"\(lesson.title)\" is part of MelodyPop Plus. Ask a grown-up to look in the Parent Dashboard (Me tab)."
+                lockedMessage = "\"\(lesson.title)\" is part of Say Piano Plus. Ask a grown-up to look in the Parent Dashboard (Me tab)."
             } else {
                 lockedMessage = "Finish lesson \(lesson.id - 1) to unlock \"\(lesson.title)\"."
             }
